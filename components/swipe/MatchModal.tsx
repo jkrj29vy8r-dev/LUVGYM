@@ -1,22 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Dumbbell, Heart, MessageCircle, Sparkles, X, Zap } from "lucide-react";
 import { RippleButton } from "@/components/ui/RippleButton";
-import type { SwipeProfile } from "./types";
+import { useAuth, type Profile } from "@/lib/auth/AuthProvider";
+import { getFallbackGradient, getInitials } from "@/lib/avatar";
 
 interface MatchModalProps {
-  profile: SwipeProfile | null;
+  profile: Profile | null;
+  matchId: string | null;
   onClose: () => void;
-  onSendMessage: (profile: SwipeProfile) => void;
-  onProposeSession: (profile: SwipeProfile) => void;
 }
-
-const CURRENT_USER = {
-  initials: "AK",
-  gradient: "linear-gradient(135deg, #FF2A5F 0%, #00F2FE 100%)",
-};
 
 const PARTICLE_ICONS = [Heart, Dumbbell, Zap, Sparkles];
 const PARTICLE_COLORS = ["#FF2A5F", "#00F2FE", "#FF6690", "#33F5FE", "#FFFFFF"];
@@ -52,7 +48,16 @@ function generateBurst(count: number): Particle[] {
   });
 }
 
-export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }: MatchModalProps) {
+export function MatchModal({ profile, matchId, onClose }: MatchModalProps) {
+  const router = useRouter();
+  const { profile: currentUserProfile, user } = useAuth();
+
+  const goToChat = (compose?: "workout") => {
+    if (!matchId) return;
+    onClose();
+    router.push(compose ? `/matches/${matchId}?compose=${compose}` : `/matches/${matchId}`);
+  };
+
   return (
     <AnimatePresence>
       {profile && (
@@ -64,7 +69,7 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
           transition={{ duration: 0.25 }}
           role="dialog"
           aria-modal="true"
-          aria-label={`It's a match with ${profile.name}`}
+          aria-label={`It's a match with ${profile.full_name ?? "your new match"}`}
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-obsidian-950/85 p-6 backdrop-blur-md"
           onClick={onClose}
         >
@@ -118,10 +123,15 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
                 initial={{ x: -70, rotate: -20, opacity: 0 }}
                 animate={{ x: -14, rotate: -8, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-                className="flex h-20 w-20 items-center justify-center rounded-full text-lg font-bold text-white shadow-glow-love-lg ring-4 ring-obsidian-900"
-                style={{ background: CURRENT_USER.gradient }}
+                className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-lg font-bold text-white shadow-glow-love-lg ring-4 ring-obsidian-900"
+                style={currentUserProfile?.avatar_url ? undefined : { background: getFallbackGradient(user?.id ?? "you") }}
               >
-                {CURRENT_USER.initials}
+                {currentUserProfile?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- user-uploaded, arbitrary remote URL
+                  <img src={currentUserProfile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  getInitials(currentUserProfile?.full_name)
+                )}
               </motion.div>
               <motion.div
                 initial={{ scale: 0 }}
@@ -135,10 +145,15 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
                 initial={{ x: 70, rotate: 20, opacity: 0 }}
                 animate={{ x: 14, rotate: 8, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-                className="flex h-20 w-20 items-center justify-center rounded-full text-lg font-bold text-white shadow-glow-energy-lg ring-4 ring-obsidian-900"
-                style={{ background: profile.photoGradient }}
+                className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-lg font-bold text-white shadow-glow-energy-lg ring-4 ring-obsidian-900"
+                style={profile.avatar_url ? undefined : { background: getFallbackGradient(profile.id) }}
               >
-                {profile.initials}
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- user-uploaded, arbitrary remote URL
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  getInitials(profile.full_name)
+                )}
               </motion.div>
             </div>
 
@@ -156,8 +171,9 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
               transition={{ delay: 0.45, duration: 0.4 }}
               className="mt-2 text-sm text-obsidian-300"
             >
-              You and <span className="font-semibold text-white">{profile.name}</span> both swiped
-              right. Time to lock in a session.
+              You and{" "}
+              <span className="font-semibold text-white">{profile.full_name || "your match"}</span>{" "}
+              both swiped right. Time to lock in a session.
             </motion.p>
 
             <motion.div
@@ -170,7 +186,7 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
                 theme="crimson"
                 className="flex-1"
                 icon={<MessageCircle size={17} />}
-                onClick={() => onSendMessage(profile)}
+                onClick={() => goToChat()}
               >
                 Send Message
               </RippleButton>
@@ -178,7 +194,7 @@ export function MatchModal({ profile, onClose, onSendMessage, onProposeSession }
                 theme="cyan"
                 className="flex-1"
                 icon={<Dumbbell size={17} />}
-                onClick={() => onProposeSession(profile)}
+                onClick={() => goToChat("workout")}
               >
                 Propose Workout
               </RippleButton>

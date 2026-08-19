@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CalendarDays, Compass, Dumbbell, Flame, Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo/Logo";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { getFallbackGradient, getInitials } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Discover", href: "#discover", icon: Compass },
-  { label: "Matches", href: "#matches", icon: Flame },
+  { label: "Matches", href: "/matches", icon: Flame },
   { label: "Gyms", href: "#gyms", icon: Dumbbell },
   { label: "Events", href: "#events", icon: CalendarDays },
 ];
@@ -18,6 +22,10 @@ export function Header() {
   const [activeItem, setActiveItem] = useState(navItems[0].label);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, profile } = useAuth();
+  const { openAuthModal } = useAuthModal();
+
+  const initials = getInitials(profile?.full_name);
 
   return (
     <>
@@ -35,8 +43,10 @@ export function Header() {
             >
               {navItems.map((item) => {
                 const isActive = activeItem === item.label;
+                const isRoute = item.href.startsWith("/");
+                const NavLink = isRoute ? Link : "a";
                 return (
-                  <a
+                  <NavLink
                     key={item.label}
                     href={item.href}
                     onClick={() => setActiveItem(item.label)}
@@ -54,7 +64,7 @@ export function Header() {
                     )}
                     <item.icon size={15} className={cn(isActive && "text-love")} />
                     {item.label}
-                  </a>
+                  </NavLink>
                 );
               })}
             </nav>
@@ -69,17 +79,38 @@ export function Header() {
                 <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-love shadow-glow-love-sm" />
               </button>
 
-              <button
-                onClick={() => setProfileOpen(true)}
-                aria-label="Open profile menu"
-                aria-haspopup="dialog"
-                className="focus-ring relative flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-white/10 transition-transform hover:scale-105 active:scale-95"
-              >
-                <span className="flex h-full w-full items-center justify-center rounded-full bg-love-energy-gradient text-xs font-semibold text-white">
-                  AK
-                </span>
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-obsidian-900 bg-energy" />
-              </button>
+              {user ? (
+                <button
+                  onClick={() => setProfileOpen(true)}
+                  aria-label="Open profile menu"
+                  aria-haspopup="dialog"
+                  className="focus-ring relative flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-white/10 transition-transform hover:scale-105 active:scale-95"
+                >
+                  {profile?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- user-uploaded, arbitrary remote URL
+                    <img
+                      src={profile.avatar_url}
+                      alt=""
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="flex h-full w-full items-center justify-center rounded-full text-xs font-semibold text-white"
+                      style={{ background: getFallbackGradient(user.id) }}
+                    >
+                      {initials}
+                    </span>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-obsidian-900 bg-energy" />
+                </button>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  className="focus-ring rounded-full border border-glass-border bg-glass-surface px-4 py-2 text-sm font-medium text-white transition-colors hover:border-love/40"
+                >
+                  Sign In
+                </button>
+              )}
 
               {/* Mobile menu toggle */}
               <button
@@ -106,8 +137,10 @@ export function Header() {
               >
                 {navItems.map((item) => {
                   const isActive = activeItem === item.label;
+                  const isRoute = item.href.startsWith("/");
+                  const NavLink = isRoute ? Link : "a";
                   return (
-                    <a
+                    <NavLink
                       key={item.label}
                       href={item.href}
                       onClick={() => {
@@ -123,7 +156,7 @@ export function Header() {
                     >
                       <item.icon size={16} className={cn(isActive && "text-love")} />
                       {item.label}
-                    </a>
+                    </NavLink>
                   );
                 })}
               </motion.nav>

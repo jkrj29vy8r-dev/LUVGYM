@@ -10,26 +10,21 @@ import {
   useAnimation,
   useMotionTemplate,
 } from "framer-motion";
-import {
-  BadgeCheck,
-  Clock,
-  Dumbbell,
-  Heart,
-  MapPin,
-  Zap,
-} from "lucide-react";
+import { Clock, Dumbbell, Heart, MapPin, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SwipeDirection, SwipeProfile } from "./types";
+import { getFallbackGradient, getInitials } from "@/lib/avatar";
+import type { Profile } from "@/lib/auth/AuthProvider";
+import type { SwipeDirection } from "./types";
 
 export interface SwipeCardHandle {
   swipe: (direction: SwipeDirection) => void;
 }
 
 interface SwipeCardProps {
-  profile: SwipeProfile;
+  profile: Profile;
   isTop: boolean;
   stackIndex: number;
-  onSwiped: (direction: SwipeDirection, profile: SwipeProfile) => void;
+  onSwiped: (direction: SwipeDirection, profile: Profile) => void;
 }
 
 const SWIPE_THRESHOLD = 120;
@@ -41,9 +36,25 @@ const DRAG_TILT_SPRING = { stiffness: 260, damping: 26, mass: 0.7 };
 const EXIT_TRANSITION = { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const };
 const SNAP_BACK_TRANSITION = { type: "spring" as const, stiffness: 420, damping: 32 };
 
-const modeCopy: Record<SwipeProfile["mode"], { label: string; icon: typeof Dumbbell }> = {
-  "gym-buddy": { label: "Looking for Gym Buddy", icon: Dumbbell },
-  dating: { label: "Open for Dating", icon: Heart },
+const modeCopy: Record<
+  NonNullable<Profile["looking_for"]>,
+  { label: string; icon: typeof Dumbbell; className: string }
+> = {
+  GYM_BUDDY: {
+    label: "Looking for Gym Buddy",
+    icon: Dumbbell,
+    className: "border-energy/40 bg-energy/15 text-energy-100 shadow-glow-energy-sm",
+  },
+  DATING: {
+    label: "Open for Dating",
+    icon: Heart,
+    className: "border-love/40 bg-love/15 text-love-100 shadow-glow-love-sm",
+  },
+  BOTH: {
+    label: "Open to Both",
+    icon: Sparkles,
+    className: "border-white/25 bg-love-energy-gradient text-white shadow-glow-love-sm",
+  },
 };
 
 export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function SwipeCard(
@@ -70,7 +81,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
   // the depth cue that sells the Vision-Pro-style "physical glass" feel.
   const shadowX = useTransform(rotateY, [-30, 30], [24, -24]);
   const shadowY = useTransform(rotateX, [-30, 30], [-18, 18]);
-  const modeGlow = profile.mode === "dating" ? "255,42,95" : "0,242,254";
+  const modeGlow = profile.looking_for === "GYM_BUDDY" ? "0,242,254" : "255,42,95";
   const boxShadow = useMotionTemplate`${shadowX}px ${shadowY}px 45px -12px rgba(0,0,0,0.6), 0 22px 60px -20px rgba(${modeGlow},0.35)`;
 
   const likeOpacity = useTransform(x, [40, 150], [0, 1]);
@@ -133,7 +144,9 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
     controls.start({ x: 0, y: 0, transition: SNAP_BACK_TRANSITION });
   };
 
-  const mode = modeCopy[profile.mode];
+  const mode = profile.looking_for ? modeCopy[profile.looking_for] : null;
+  const initials = getInitials(profile.full_name);
+  const fallbackGradient = getFallbackGradient(profile.id);
 
   return (
     <motion.div
@@ -178,12 +191,19 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
           isTop ? "cursor-grab active:cursor-grabbing" : "pointer-events-none"
         )}
       >
-        {/* Photo layer — placeholder gradient standing in for a real upload */}
-        <div className="absolute inset-0" style={{ background: profile.photoGradient }}>
-          <div className="absolute inset-0 bg-noise opacity-40 mix-blend-overlay" />
-          <div className="absolute inset-0 flex items-center justify-center text-[9rem] font-bold text-white/10">
-            {profile.initials}
-          </div>
+        {/* Photo layer — a real upload if present, otherwise a deterministic gradient */}
+        <div className="absolute inset-0">
+          {profile.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- arbitrary remote/user-uploaded URL, fills a non-Image layout
+            <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: fallbackGradient }}>
+              <div className="absolute inset-0 bg-noise opacity-40 mix-blend-overlay" />
+              <div className="absolute inset-0 flex items-center justify-center text-[9rem] font-bold text-white/10">
+                {initials}
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
         </div>
 
@@ -194,21 +214,15 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
         >
           {/* Mode badge */}
           <div className="flex items-start justify-between">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold backdrop-blur-xl",
-                profile.mode === "dating"
-                  ? "border-love/40 bg-love/15 text-love-100 shadow-glow-love-sm"
-                  : "border-energy/40 bg-energy/15 text-energy-100 shadow-glow-energy-sm"
-              )}
-            >
-              <mode.icon size={14} />
-              {mode.label}
-            </span>
-
-            {profile.verified && (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-glass-border bg-glass-surface backdrop-blur-xl">
-                <BadgeCheck size={16} className="text-energy" />
+            {mode && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold backdrop-blur-xl",
+                  mode.className
+                )}
+              >
+                <mode.icon size={14} />
+                {mode.label}
               </span>
             )}
           </div>
@@ -235,18 +249,15 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
 
           {/* Identity + fitness badges */}
           <div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-white">{profile.name}</h3>
-              <span className="text-xl font-medium text-white/70">{profile.age}</span>
-            </div>
-            <p className="mt-1 text-sm text-white/80">{profile.bio}</p>
+            <h3 className="text-2xl font-bold text-white">{profile.full_name || "Anonymous"}</h3>
+            {profile.bio && <p className="mt-1 text-sm text-white/80">{profile.bio}</p>}
 
             <div className="mt-3.5 flex flex-wrap gap-1.5">
-              <InfoBadge icon={MapPin}>{profile.gymLocation}</InfoBadge>
-              <InfoBadge icon={Zap}>{profile.workoutFocus}</InfoBadge>
-              <InfoBadge icon={Clock}>
-                {profile.preferredTimeLabel} ({profile.preferredTimeRange})
-              </InfoBadge>
+              {profile.gym_chain && <InfoBadge icon={MapPin}>{profile.gym_chain}</InfoBadge>}
+              {profile.workout_type && <InfoBadge icon={Zap}>{profile.workout_type}</InfoBadge>}
+              {profile.preferred_schedule && (
+                <InfoBadge icon={Clock}>{profile.preferred_schedule}</InfoBadge>
+              )}
             </div>
           </div>
         </div>
