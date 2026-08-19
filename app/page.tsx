@@ -1,6 +1,6 @@
-import { Dumbbell, HeartHandshake, MapPin, Sparkles } from "lucide-react";
+import { Dumbbell, HeartHandshake, MapPin } from "lucide-react";
 import { Header } from "@/components/layout/Header";
-import { Button } from "@/components/ui/Button";
+import { HeroSection } from "@/components/hero/HeroSection";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 const stats = [
@@ -36,50 +36,22 @@ const features = [
 export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-obsidian">
-      {/* Ambient background accents */}
+      {/* Ambient background accent, carries the glow past the hero's 3D canvas */}
       <div className="pointer-events-none absolute inset-0 bg-grid-glow" />
-      <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-love/10 blur-[120px]" />
-      <div className="pointer-events-none absolute top-96 right-0 h-80 w-80 rounded-full bg-energy/10 blur-[120px]" />
 
       <Header />
 
-      <section className="relative mx-auto flex max-w-5xl flex-col items-center px-6 pb-24 pt-40 text-center sm:pt-48">
-        <div className="animate-fade-in inline-flex items-center gap-2 rounded-full border border-glass-border bg-glass-surface px-4 py-1.5 text-xs font-medium text-obsidian-200 backdrop-blur-xl">
-          <Sparkles size={13} className="text-love" />
-          Now matching in 40+ cities
-        </div>
+      <HeroSection />
 
-        <h1
-          className="mt-6 text-balance text-5xl font-semibold tracking-tight text-white sm:text-6xl md:text-7xl"
-          style={{ animationDelay: "0.05s" }}
-        >
-          Find your match.
-          <br />
-          <span className="text-gradient-brand">Find your spot.</span>
-        </h1>
-
-        <p className="mt-6 max-w-xl text-balance text-base text-obsidian-300 sm:text-lg">
-          LUVGYM connects you with people who train the way you train. Real
-          gyms, real chemistry, real gains — together.
-        </p>
-
-        <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-          <Button size="lg">Get Started Free</Button>
-          <Button size="lg" variant="secondary">
-            See How It Works
-          </Button>
-        </div>
-
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl font-semibold text-white">{stat.value}</p>
-              <p className="text-xs uppercase tracking-wider text-obsidian-400">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
+      <section className="relative mx-auto -mt-8 flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4 px-6 pb-20 text-center">
+        {stats.map((stat) => (
+          <div key={stat.label} className="text-center">
+            <p className="text-2xl font-semibold text-white">{stat.value}</p>
+            <p className="text-xs uppercase tracking-wider text-obsidian-400">
+              {stat.label}
+            </p>
+          </div>
+        ))}
       </section>
 
       <section className="relative mx-auto max-w-5xl px-6 pb-32">

@@ -60,6 +60,11 @@
     @apply bg-love-energy-gradient bg-clip-text text-transparent;
   }
 
+  /* Hero headline gradient: white fading into neon crimson */
+  .text-gradient-hero {
+    @apply bg-gradient-to-r from-white to-love bg-clip-text text-transparent;
+  }
+
   /* Shimmering skeleton / loading-shine effect */
   .shimmer-surface {
     background: linear-gradient(
