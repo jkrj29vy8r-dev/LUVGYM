@@ -1,6 +1,7 @@
 import { Dumbbell, HeartHandshake, MapPin } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { HeroSection } from "@/components/hero/HeroSection";
+import { SwipeDeck } from "@/components/swipe/SwipeDeck";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 const stats = [
@@ -52,6 +53,26 @@ export default function Home() {
             </p>
           </div>
         ))}
+      </section>
+
+      <section
+        id="discover"
+        className="relative mx-auto max-w-5xl px-6 pb-32 text-center"
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-glass-border bg-glass-surface px-4 py-1.5 text-xs font-medium text-obsidian-200 backdrop-blur-xl">
+          Discover
+        </div>
+        <h2 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Swipe. Match. <span className="text-gradient-brand">Train together.</span>
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-obsidian-300 sm:text-base">
+          Drag the card, or use the buttons below — every profile carries real
+          gym intel so there are no surprises at the rack.
+        </p>
+
+        <div className="mt-12">
+          <SwipeDeck />
+        </div>
       </section>
 
       <section className="relative mx-auto max-w-5xl px-6 pb-32">
